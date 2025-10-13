@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.10)
+project(cpp-db-backend VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# src
+add_library(kvstore src/kv/kvstore.cpp)
+target_include_directories(kvstore PUBLIC src)
+
+# tests (using built-in testing)
+enable_testing()
+add_executable(test_kv tests/test_kv.cpp)
+target_link_libraries(test_kv PRIVATE kvstore)
+add_test(NAME KVStoreTest COMMAND test_kv)

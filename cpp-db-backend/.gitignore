@@ -1,0 +1,24 @@
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# macOS specific
+.DS_Store
+
+# Editor/IDE specific
+.vscode/
+*.swp
+*.swo
+*.sln
+*.user
+*.xcodeproj
+*.xcworkspace
+
+# Compiled binaries
+*.o
+*.out
+*.exe
+kvserver
+test_kv

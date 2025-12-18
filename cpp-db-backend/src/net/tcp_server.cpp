@@ -8,6 +8,10 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <stdexcept>
+#include <sstream>
+#include <vector>
+
+
 
 namespace kv {
 
@@ -40,6 +44,64 @@ namespace kv {
 
     }
 
+    std::string TCPServer::process_command(const std::string &cmd) {
+        std::istringstream iss(cmd);
+        std::string token;
+        std::vector<std::string> tokens;
+
+        while (iss >> token) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.empty()) {
+            return "ERROR: Empty command\n";
+        }
+
+        std::string command = tokens[0];
+
+        if (command == "SET") {
+            if (tokens.size() != 3) {
+                return "ERROR: SET command requires 2 arguments\n";
+            }
+
+            store_.set(tokens[1], tokens[2]);
+            return "OK\n";
+        } else if (command == "GET") {
+            if (tokens.size() != 2) {
+                return "ERROR: GET command requires 1 argument\n";
+            }
+
+            auto value = store_.get(tokens[1]);
+            if (value) {
+                return *value + "\n";
+            } else {
+                return "It ain't there pal\n";
+            }
+
+        } else if (command == "DELETE") {
+            if (tokens.size() != 2) {
+                return "ERROR: DELETE command requires 1 argument\n";
+            }
+
+            bool deleted = store_.del(tokens[1]);
+            if (deleted) {
+                return "OK\n";
+            } else {
+                return "Key not found\n";
+            }
+
+        } else if (command == "EXISTS") {
+            if (tokens.size() != 2) {
+                return "ERROR: EXISTS command requires 1 argument\n";
+            }
+
+            bool exists = store_.exists(tokens[1]);
+            return exists ? "1\n" : "0\n";
+        } else {
+            return "ERROR: Unknown command\n";
+        }
+    }
+
     void TCPServer::start() { //Start the server
         running_ = true;
         std::cout << "Server started, waiting for connections..." << std::endl;
@@ -69,6 +131,33 @@ namespace kv {
         }
     }
 
+    void TCPServer::handle_client(int client_sock) {
+        //Handle el cliente here
+
+        char buffer[1024];
+
+        while (running_) {
+            memset(buffer, 0, sizeof(buffer));
+
+            ssize_t bytes_read = recv(client_sock, buffer, sizeof(buffer)-1, 0);
+
+            if (bytes_read <= 0) {
+                //Something went wrong or client disconnected
+                break;
+            }
+
+            std::string command(buffer, bytes_read);
+            std::string response = process_command(command);
+
+            send(client_sock, response.c_str(), response.size(), 0);
+        }
+
+        close(client_sock);
+        std::cout << "Client disconnected." << std::endl;
+
+
+    }
+
     void TCPServer::stop() {
         running_ = false;
         close(server_sock_);
@@ -85,11 +174,11 @@ namespace kv {
     }
 
     TCPServer::~TCPServer() {
-        if (server_sock_ >= 0) {
-            stop();
+        
+        stop();
 
             //I will close server sock in stop() function
-        }
+        
     }
 
 }

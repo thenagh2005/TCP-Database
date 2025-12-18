@@ -8,6 +8,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_library(kvstore src/kv/kvstore.cpp)
 target_include_directories(kvstore PUBLIC src)
 
+# TCP server executable
+add_executable(tcp_server 
+    src/main.cpp
+    src/net/tcp_server.cpp
+)
+target_link_libraries(tcp_server PRIVATE kvstore pthread)
+target_include_directories(tcp_server PRIVATE src)
+
 # tests (using built-in testing)
 enable_testing()
 add_executable(test_kv tests/test_kv.cpp)

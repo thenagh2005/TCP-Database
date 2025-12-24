@@ -217,7 +217,55 @@ namespace kv
 
     std::vector<std::pair<std::string, double>> ZSet::range(int start, int stop) const
     {
-        return {};
+        //Go through lowest level
+
+        
+
+        std::vector<std::pair<std::string, double>> res;
+
+        if (length_ == 0) {
+            return res;
+        }
+
+        if (start < 0) {
+            start = length_ + start;
+        }
+
+        if (stop < 0) {
+            stop = length_ + stop;
+        }
+
+        if (start < 0) {
+            start = 0;
+        }
+
+        if (stop >= length_) {
+            stop = length_ - 1;
+        }
+
+        if (start > stop) {
+            return res;
+        }
+
+        //Start from head
+
+        ZSetNode *current = head_->forward[0];
+
+        int currRank = 0;
+
+        while (current != nullptr)
+            {
+                if (currRank >= start && currRank <= stop) {
+                    res.emplace_back(current->member, current->score);
+                }
+
+                current = current->forward[0];
+                currRank++;
+            }
+        
+        return res;
+
+        
     }
 
     ZSetNode *ZSet::findNode(const std::string &member, double score) const

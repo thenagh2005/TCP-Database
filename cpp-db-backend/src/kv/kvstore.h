@@ -4,6 +4,10 @@
 #include <unordered_map>
 #include <shared_mutex>
 #include <vector>
+#include <chrono>
+#include "zset.h"
+
+
 
 namespace kv
 {
@@ -17,11 +21,17 @@ namespace kv
         bool del(const std::string &key);
         bool exists(const std::string &key) const;
 
+        void setWithTTL(const std::string &key, const std::string &value, std::chrono::seconds ttl);
+        std::optional<std::string> getWithTTL(const std::string &key) const;
+
+
+
     private:
         struct Shard
         {
             mutable std::shared_mutex mutex;
             std::unordered_map<std::string, std::string> data;
+            std::unordered_map<std::string, ZSet> sorted_sets;
 
         };
 

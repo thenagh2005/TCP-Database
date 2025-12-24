@@ -1,5 +1,6 @@
 #include "tcp_server.h"
 #include "../kv/kvstore.h"
+#include "../kv/zset.h"
 #include <iostream>
 #include <string>
 #include <thread>
@@ -97,6 +98,8 @@ namespace kv {
 
             bool exists = store_.exists(tokens[1]);
             return exists ? "1\n" : "0\n";
+        } else if (command == "ZADD") {
+            
         } else {
             return "ERROR: Unknown command\n";
         }

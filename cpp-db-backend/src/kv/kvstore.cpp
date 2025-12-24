@@ -39,5 +39,67 @@ namespace kv {
         std::shared_lock lock(shard.mutex);
         return shard.data.find(key) != shard.data.end();
     }
+
+    bool KVStore::zadd(const std::string& key, const std::string& member, double score) {
+        size_t shard_index = getShard(key);
+        auto& shard = shards_[shard_index];
+        std::unique_lock lock(shard.mutex);
+        return shard.sorted_sets[key].add(member, score);
+    }
+
+    bool KVStore::zrem(const std::string& key, const std::string& member) {
+        size_t shard_index = getShard(key);
+        auto& shard = shards_[shard_index];
+        std::unique_lock lock(shard.mutex);
+        return shard.sorted_sets[key].remove(member);
+    }
+
+    std::optional<double> KVStore::zscore(const std::string& key, const std::string& member) const {
+        size_t shard_index = getShard(key);
+        const auto& shard = shards_[shard_index];
+        std::shared_lock lock(shard.mutex);
+        auto it = shard.sorted_sets.find(key);
+        if (it != shard.sorted_sets.end()) {
+            return it->second.score(member);
+        }
+        return std::nullopt;
+    }
+
+    //Now zrank, zrange, and zsize
+
+    size_t KVStore::zsize(const std::string& key) const {
+        size_t shard_index = getShard(key);
+        const auto& shard = shards_[shard_index];
+        std::shared_lock lock(shard.mutex);
+        auto it = shard.sorted_sets.find(key);
+        if (it != shard.sorted_sets.end()) {
+            return it->second.size();
+        }
+        return 0;
+    }
+
+    std::vector<std::pair<std::string, double>> KVStore::zrange(const std::string& key, int start, int stop) const {
+        size_t shard_index = getShard(key);
+        const auto& shard = shards_[shard_index];
+        std::shared_lock lock(shard.mutex);
+
+        auto it = shard.sorted_sets.find(key);
+        if (it != shard.sorted_sets.end()) {
+            return it->second.range(start, stop); 
+        }
+        return {};
+
+    }
+
+    std::optional<int> KVStore::zrank(const std::string& key, const std::string& member) const {
+        size_t shard_index = getShard(key);
+        const auto& shard = shards_[shard_index];
+        std::shared_lock lock(shard.mutex);
+        auto it = shard.sorted_sets.find(key);
+        if (it != shard.sorted_sets.end()) {
+            return it->second.rank(member);
+        }
+        return std::nullopt;
+    }
     
 }

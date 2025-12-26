@@ -295,11 +295,16 @@ namespace kv
             }
 
             return nullptr;
+    }
 
-        
-        
-        
+    std::vector<std::pair<std::string, double>> ZSet::all() const {
+        std::vector<std::pair<std::string, double>> res;
 
+        return range(0, -1);
+    }
 
+    size_t ZSet::size() const
+    {
+        return length_;
     }
 }

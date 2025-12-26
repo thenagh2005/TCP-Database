@@ -22,6 +22,7 @@ namespace kv
         std::optional<std::string> get(const std::string &key) const;
         bool del(const std::string &key);
         bool exists(const std::string &key) const;
+        std::vector<std::pair<std::string, std::string>> all_entries() const;
 
         //Sorted set operations
 
@@ -31,6 +32,8 @@ namespace kv
         std::vector<std::pair<std::string, double>> zrange(const std::string &key, int start, int stop) const;
         bool zrem(const std::string &key, const std::string &member);
         size_t zsize(const std::string &key) const;
+
+        
 
 
 

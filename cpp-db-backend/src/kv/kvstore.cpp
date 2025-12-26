@@ -101,5 +101,30 @@ namespace kv {
         }
         return std::nullopt;
     }
+
+    std::vector<std::pair<std::string, std::string>> KVStore::all_entries() const {
+        std::vector<std::pair<std::string, std::string>> entries;
+
+        for (const auto& shard : shards_) {
+            std::shared_lock lock(shard.mutex);
+            
+            // String key-value pairs
+            for (const auto& [key, value] : shard.data) {
+                entries.emplace_back("STRING:" + key, value);
+            }
+            
+            // Sorted set entries
+            for (const auto& [key, zset] : shard.sorted_sets) {
+                auto members = zset.all(); // Get all members
+                for (const auto& [member, score] : members) {
+                    entries.emplace_back("ZSET:" + key + ":" + member, std::to_string(score));
+                }
+            }
+        }
+
+        return entries;
+    }
+
     
+
 }

@@ -98,7 +98,109 @@ namespace kv {
 
             bool exists = store_.exists(tokens[1]);
             return exists ? "1\n" : "0\n";
-        } else if (command == "ZADD") {
+        } else if (command == "ALL") {
+            if (tokens.size() != 1) {
+                return "ERROR: ALL command takes no arguments\n";
+            }
+
+            auto entries = store_.all_entries();
+            std::string response;
+            for (const auto &[key, value] : entries) {
+                response += key + " " + value + "\n";
+            }
+
+            return response.empty() ? "nil\n" : response;
+        } 
+         else if (command == "ZADD") {
+            if (tokens.size() != 4) {
+                return "ERROR: ZADD command requires 3 arguments\n";
+            }
+
+            const std::string &key = tokens[1];
+            double score;
+
+            try {
+                score = std::stod(tokens[2]);
+            } catch (const std::invalid_argument &) {
+                return "ERROR: Score must be a valid number\n";
+            }
+
+            const std::string &member = tokens[3];
+            bool added = store_.zadd(key, member, score);
+            return added ? "1\n" : "0\n";
+
+
+            
+        } else if (command == "ZREM") {
+            if (tokens.size() != 3) {
+                return "ERROR: ZREM command requires 2 arguments\n";
+            }
+
+            const std::string &key = tokens[1];
+            const std::string &member = tokens[2];
+            bool removed = store_.zrem(key, member);
+            return removed ? "1\n" : "0\n";
+            
+        } else if (command == "ZSCORE") {
+            if (tokens.size() != 3) {
+                return "ERROR: ZSCORE command requires 2 arguments\n";
+            }
+
+            const std::string &key = tokens[1];
+            const std::string &member = tokens[2];
+            auto score = store_.zscore(key, member);
+            if (score) {
+                return std::to_string(*score) + "\n";
+            } else {
+                return "nil\n";
+            }
+            
+        } else if (command == "ZRANK") {
+            if (tokens.size() != 3) {
+                return "ERROR: ZRANK command requires 2 arguments\n";
+            }
+
+            const std::string &key = tokens[1];
+            const std::string &member = tokens[2];
+            auto rank = store_.zrank(key, member);
+            if (rank) {
+                return std::to_string(*rank) + "\n";
+            } else {
+                return "nil\n";
+            }
+            
+        } else if (command == "ZRANGE") {
+            if (tokens.size() != 4) {
+                return "ERROR: ZRANGE command requires 3 arguments\n";
+            }
+
+            const std::string &key = tokens[1];
+            int start, stop;
+
+            try {
+                start = std::stoi(tokens[2]);
+                stop = std::stoi(tokens[3]);
+            } catch (const std::invalid_argument &) {
+                return "ERROR: Start and stop must be valid integers\n";
+            }
+
+            auto range = store_.zrange(key, start, stop);
+            std::string response;
+            for (const auto &[member, score] : range) {
+                response += member + " " + std::to_string(score) + "\n";
+            }
+            return response.empty() ? "nil\n" : response;
+            
+
+            
+        } else if (command == "ZSIZE") {
+            if (tokens.size() != 2) {
+                return "ERROR: ZSIZE command requires 1 argument\n";
+            }
+
+            const std::string &key = tokens[1];
+            size_t size = store_.zsize(key);
+            return std::to_string(size) + "\n";
             
         } else {
             return "ERROR: Unknown command\n";

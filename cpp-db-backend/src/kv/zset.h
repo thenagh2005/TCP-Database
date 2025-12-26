@@ -29,6 +29,9 @@ namespace kv {
             std::optional<int> rank(const std::string &member) const;
             std::vector<std::pair<std::string, double>> range(int start, int stop) const;
             size_t size() const;
+
+            std::vector<std::pair<std::string, double>> all() const;
+            
         
         private:
             ZSetNode *head_;

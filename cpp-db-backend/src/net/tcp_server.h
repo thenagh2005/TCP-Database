@@ -23,5 +23,16 @@ namespace kv {
             int server_sock_;
             std::atomic<bool> running_;
             std::vector<std::thread> threads_;
+
+            std::string encode_simple_string (const std::string& str);
+            std::string encode_error (const std::string& err);
+            std::string encode_integer (long long val);
+            std::string encode_bulk_string (const std::string& str);
+            std::string encode_null_bulk_string();
+            std::string encode_array(const std::vector<std::string>& elements);
+
+
+
+
     };
 }

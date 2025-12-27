@@ -286,4 +286,34 @@ namespace kv {
         
     }
 
+    std::string TCPServer::encode_simple_string(const std::string &str) {
+        return "+" + str + "\r\n";
+    }
+    
+    std::string TCPServer::encode_error(const std::string &err) {
+        return "-ERR " + err + "\r\n";
+    }
+
+    std::string TCPServer::encode_integer(long long val) {
+        return ":" + std::to_string(val) + "\r\n";
+    }
+
+    std::string TCPServer::encode_bulk_string(const std::string &str) {
+        return "$" + std::to_string(str.size()) + "\r\n" + str + "\r\n";
+    }
+
+    std::string TCPServer::encode_null_bulk_string() {
+        return "$-1\r\n";
+    }
+
+    std::string TCPServer::encode_array(const std::vector<std::string> &elements) {
+        std::string res = "*" + std::to_string(elements.size()) + "\r\n";
+
+        for (const auto &el : elements) {
+            res += encode_bulk_string(el);
+        }
+
+        return res;
+    }
+
 }

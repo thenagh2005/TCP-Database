@@ -55,65 +55,72 @@ namespace kv {
         }
 
         if (tokens.empty()) {
-            return "ERROR: Empty command\n";
+            return encode_error("Empty command");
         }
 
         std::string command = tokens[0];
 
         if (command == "SET") {
             if (tokens.size() != 3) {
-                return "ERROR: SET command requires 2 arguments\n";
+                return encode_error("SET command requires 2 arguments");
             }
 
             store_.set(tokens[1], tokens[2]);
-            return "OK\n";
+            return encode_simple_string("OK");
         } else if (command == "GET") {
             if (tokens.size() != 2) {
-                return "ERROR: GET command requires 1 argument\n";
+                return encode_error("GET command requires 1 argument");
             }
 
             auto value = store_.get(tokens[1]);
             if (value) {
-                return *value + "\n";
+                return encode_bulk_string(*value);
             } else {
-                return "It ain't there pal\n";
+                return encode_null_bulk_string();
             }
 
         } else if (command == "DELETE") {
             if (tokens.size() != 2) {
-                return "ERROR: DELETE command requires 1 argument\n";
+                return encode_error("DELETE command requires 1 argument");
             }
 
             bool deleted = store_.del(tokens[1]);
             if (deleted) {
-                return "OK\n";
+                return encode_integer(1);
             } else {
-                return "Key not found\n";
+                return encode_integer(0);
             }
 
         } else if (command == "EXISTS") {
             if (tokens.size() != 2) {
-                return "ERROR: EXISTS command requires 1 argument\n";
+                return encode_error("EXISTS command requires 1 argument");
             }
 
             bool exists = store_.exists(tokens[1]);
-            return exists ? "1\n" : "0\n";
+            return exists ? encode_integer(1) : encode_integer(0);
         } else if (command == "ALL") {
             if (tokens.size() != 1) {
-                return "ERROR: ALL command takes no arguments\n";
+                return encode_error("ALL command takes no arguments");
             }
 
             auto entries = store_.all_entries();
-            std::string response;
+
+            if (entries.empty()) {
+                return encode_null_bulk_string();
+            }
+            
+            std::vector<std::string> elements;
+
             for (const auto &[key, value] : entries) {
-                response += key + " " + value + "\n";
+                elements.push_back(key);
+                elements.push_back(value);
             }
 
-            return response.empty() ? "nil\n" : response;
+            return encode_array(elements);
         } 
          else if (command == "ZADD") {
             if (tokens.size() != 4) {
-                return "ERROR: ZADD command requires 3 arguments\n";
+                return encode_error("ZADD command requires 3 arguments");
             }
 
             const std::string &key = tokens[1];
@@ -122,56 +129,56 @@ namespace kv {
             try {
                 score = std::stod(tokens[2]);
             } catch (const std::invalid_argument &) {
-                return "ERROR: Score must be a valid number\n";
+                return encode_error("Score must be a valid number");
             }
 
             const std::string &member = tokens[3];
             bool added = store_.zadd(key, member, score);
-            return added ? "1\n" : "0\n";
+            return added ? encode_integer(1) : encode_integer(0);
 
 
             
         } else if (command == "ZREM") {
             if (tokens.size() != 3) {
-                return "ERROR: ZREM command requires 2 arguments\n";
+                return encode_error("ZREM command requires 2 arguments");
             }
 
             const std::string &key = tokens[1];
             const std::string &member = tokens[2];
             bool removed = store_.zrem(key, member);
-            return removed ? "1\n" : "0\n";
+            return removed ? encode_integer(1) : encode_integer(0);
             
         } else if (command == "ZSCORE") {
             if (tokens.size() != 3) {
-                return "ERROR: ZSCORE command requires 2 arguments\n";
+                return encode_error("ZSCORE command requires 2 arguments");
             }
 
             const std::string &key = tokens[1];
             const std::string &member = tokens[2];
             auto score = store_.zscore(key, member);
             if (score) {
-                return std::to_string(*score) + "\n";
+                return encode_bulk_string(std::to_string(*score));
             } else {
-                return "nil\n";
+                return encode_null_bulk_string();
             }
             
         } else if (command == "ZRANK") {
             if (tokens.size() != 3) {
-                return "ERROR: ZRANK command requires 2 arguments\n";
+                return encode_error("ZRANK command requires 2 arguments");
             }
 
             const std::string &key = tokens[1];
             const std::string &member = tokens[2];
             auto rank = store_.zrank(key, member);
             if (rank) {
-                return std::to_string(*rank) + "\n";
+                return encode_integer(*rank);
             } else {
-                return "nil\n";
+                return encode_null_bulk_string();
             }
             
         } else if (command == "ZRANGE") {
             if (tokens.size() != 4) {
-                return "ERROR: ZRANGE command requires 3 arguments\n";
+                return encode_error("ZRANGE command requires 3 arguments");
             }
 
             const std::string &key = tokens[1];
@@ -181,29 +188,38 @@ namespace kv {
                 start = std::stoi(tokens[2]);
                 stop = std::stoi(tokens[3]);
             } catch (const std::invalid_argument &) {
-                return "ERROR: Start and stop must be valid integers\n";
+                return encode_error("Start and stop must be valid integers");
             }
 
             auto range = store_.zrange(key, start, stop);
-            std::string response;
-            for (const auto &[member, score] : range) {
-                response += member + " " + std::to_string(score) + "\n";
+            
+
+            if (range.empty()) {
+                return encode_null_bulk_string();
             }
-            return response.empty() ? "nil\n" : response;
+
+            std::vector<std::string> elements;
+
+            for (const auto &[member, score] : range) {
+                elements.push_back(member);
+                elements.push_back(std::to_string(score));
+            }
+
+            return encode_array(elements);
             
 
             
         } else if (command == "ZSIZE") {
             if (tokens.size() != 2) {
-                return "ERROR: ZSIZE command requires 1 argument\n";
+                return encode_error("ZSIZE command requires 1 argument");
             }
 
             const std::string &key = tokens[1];
             size_t size = store_.zsize(key);
-            return std::to_string(size) + "\n";
+            return encode_integer(size);
             
         } else {
-            return "ERROR: Unknown command\n";
+            return encode_error("Unknown command");
         }
     }
 
